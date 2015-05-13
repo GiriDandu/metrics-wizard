@@ -1,0 +1,59 @@
+= #Metrics-Wizard Workflow
+
+== Premain:
+. Create `WizardAgent` object (contains: `MetricsBuilder`, `MBeansDiscovery` and `WizardReporter`)
+. Read Metrics-wizard configuration. Filename is passed as an argument to `premain` function.
+. Using configuration parameters, create `WizardReporter` (TBD)
+. Create `MetricsBuilder`, derived from `MBeansBuilder`.
+. Create and Start `MBeansDiscovery`.
+
+== MBeansDiscovery
+. Contains: MBeanTimer, MBeanContextRegistry
+
+=== Start
+. Read extant MBeans from all the MBeanServers.
+. For each MBean in each MBeanServer -> **Create MBeanContext**
+
+=== Create `MBeanContext`:
+. `MBeanContext` is derived from `TimerTask` and contains: MBean's ObjectName,
+  and reference to MBeanServer
+.. If MBean does not generate an attribute change notification, then enable polling
+.. Otherwise, create and register a `MBeanNotificationListener` for the MBean
+. Invoke `MBeansBuilder`'s register method
+
+=== MBean Listener Notifications:
+. For MBeanServerNotification.REGISTRATION_NOTIFICATION:
+.. For the MBean -> **Create MBeanContext**
+. For MBeanServerNotification.UNREGISTRATION_NOTIFICATION:
+.. Lookup `MBeanContext` from MBeanContextRegistry
+.. Stop polling timer (if any)
+.. Invoke `MBeansBuilder`'s unregister method
+.. Delete `MBeanContext`
+. For MBean AttributeChangeNotification:
+.. use the returned `MBeanContext` reference
+.. Invoke `MBeansBuilder`'s modify method
+
+=== MBeanContext timer expiration
+. Read the MBean from MBeanServer using ObjectName (question: what if multiple MBeanServer(s))
+. Invoke `MBeansBuilder`'s modify method.
+
+== MetricsBuilder
+. Contains: MetricRegistry, MetricsContextRegistry
+
+=== register callback - from MBeansDiscovery
+. Create BasicMetricsContext (derived from MetricsContext) for the MBean.
+. Add BasicMetricsContext to MetricsContextRegistry
+. It converts each MBean attribute with long/double/float type to a separate
+  com.codehale.metric.Gauge.
+. Add all gauges to a map inside BasicMetricsContext
+. Add all the Gauges to MetricsRegistry in MetricsBuilder
+
+=== update callback - from MBeansDiscovery
+. Lookup BasicMetricsContext from MetricsContextRegistry
+. Walk through all the gauges and update them
+
+=== unregister callback - from MBeansDiscovery
+. Lookup BasicMetricsContext from MetricsContextRegistry
+. Delete BasicMetricsContext
+
+

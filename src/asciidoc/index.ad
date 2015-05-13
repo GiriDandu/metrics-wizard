@@ -1,0 +1,174 @@
+= #Metrics-Wizard
+
+image::https://badges.gitter.im/Join%20Chat.svg[link="https://gitter.im/lookout/metrics-wizard"]
+image:https://travis-ci.org/lookout/metrics-wizard.svg?branch=master["Build Status",link="https://travis-ci.org/lookout/metrics-wizard"]
+
+**Who, what, where and when.**
+
+---
+
+== Important Links
+
+* link:https://github.com/lookout/metrics-wizard[Source code]
+* link:https://github.com/lookout/metrics-wizard/issues[Issue Tracker]
+
+== Internals Links
+
+* <<hacking.ad#,Hacking>>
+* <<workflow.ad#,WorkFlow>>
+
+== The Problem
+
+Most of the applications expose their metrics via JMX. Usually an external agent connects to the
+JMX port and gathers all the information.
+
+As discussed in this link:http://hackers.lookout.com/2015/01/cassandra-monitoring/[article]
+there are issues with using an external JMX gathering tool:
+
+* it has to poll the application's JMX agent
+* authenticate to avoid exposing vulnerabilities
+* redundancy issues if reporting tool dies
+
+== The Solution
+
+* Metrics Wizard is a Java agent for aggregating and reporting metrics from any JVM process.
+
+* It detects the metrics of type Long, Integer, Double, or Float and periodically reports it
+  to the server via UDP or HTTP transport. Such an approach means no changes required to the
+  existing application code.
+
+* The Metrics-Wizard will use configured reporter for reporting these published
+  metrics to server.
+
+== Design Thoughts
+
+=== Quick Primer
+
+* Java Management Extensions (aka JMX) is a facility that allows for remote clients or
+  local agents to manage and/or monitor applications running in any JVM process.
+  JMX is an simple way to expose some of the key inner-workings of your application
+  in a standardized way.
+
+* This application management and/or monitoring is done via MBeans. Managed Beans
+  (aka MBean) is a managed Java object. MBean exposes a management interface
+  that consists of attributes (i.e. metrics), operations, notifications, etc.
+
+* For each end-point (i.e. metric, statistic, gauge, meter, etc), application creates
+  a MBean and registers it with JMX infrastructure (i.e. MBeanServer)
+
+=== Configuration
+
+* Define a threshold for a metric which would create a “monitor”
+
+* Define and configure a reporter for the agent to use with a fully qualified class name
+
+[source,yaml]
+.metrics-wizard.yml
+----
+MBeans-discovery-poll-interval: 5 # in seconds
+thresholds:
+    metric-name-1: threshold-value-1
+    metric-name-2: threshold-value-2
+reporter: TBD
+----
+
+=== Metrics-wizard, the agent
+
+* In the premain routine, agent scans all the extant MBeans (metrics) from MBeanServer.
+
+* When an MBean is registered or unregistered in the MBeanServer, a MBeanServerNotification
+  Notification is emitted. The agent learns about these by registering a listener to
+  "MBeanServerDelegate" MBean.
+
+* If MBean generates notification (at run-time MBeanServer exposes this capability in MBean's
+  MBeanInfo object), then agent registers a NotificationListener to receive notifications from
+  that MBean.
+
+* If MBean does no generate notifications, then agent polls the MBean periodically and
+  detect attribute changes.
+
+* Once metrics are detected, they are stored in
+link:https://dropwizard.github.io/metrics/3.1.0/getting-started/#the-registry[Dropwizard MetricRegistry].
+
+=== Reporting - TBD
+
+* The Metrics-Wizard will use the configured reporter for reporting these published
+  metrics to server.
+
+=== Transformation - TBD
+
+* Must be able to transform the value
+* Must be able to transform the name of the metric
+* Must be configurable from the YAML configuration for a specific mbean name.
+  E.g.
+  `org.apache.ZookeeperService`ReplicatedServer_id1.QuorumSize=com.github.lookout.metricswizard.transforms..FancyIntTranform`
+* Should be configurable from the YAML configuration for a regular expression pattern
+
+== Open questions
+
+* Class path conflicts: what happens if we use dropwizard-metrics 0.2 and the JVM
+  processes are using dropwizard-metrics 0.3?
+* Are there special types of JMX MBeans that are exposed by off-the-shelf services
+  like Cassandra or Kafka, which wouldn’t be normal Long/Double/Floats
+* Can the agent get command line options? Property values?
+  link:https://docs.oracle.com/javase/7/docs/api/java/lang/instrument/package-summary.html[YES]
+* a JMXMetric from dropwizard-metric should be processed like the metric of its type,
+  i.e. if my service exposes a Gauge via the JMX reporter then the agent should
+  ingest that as a Gauge in the agent
+* If multiple applications are running in the JVM, we should create different MetricsRegistry()s.
+  link:https://dropwizard.github.io/metrics/3.1.0/manual/core/#metric-names[check this]
+
+== An awful diagram
+
+                                                       (Datagod, statsd, etc)
+                                                          +---------+
+                                                          | Server  |
+                                                          +---^-----+
+                                                              |
+                           +------------------+               |
+                           | +--------------+ |               |
+    /etc/metrics-wizard.yml| |   Metrics    | |               |
+                      <------+   Wizard  +--------------------+
+                           | |      ^       | |
+                           | +------|-------+ |
+                           |    +---+--+      |
+                           |    | JMX  |      |
+                           | +--+------+----+ |
+    /etc/application.yml   | |              | |
+                      <------+ Application  | |
+                           | |              | |
+                           | +--------------+ |
+                           | JVM              |
+                           +------------------+
+
+
+== An awful internal diagram
+
+    +-------------+
+    | MBeanServer |
+    +-------------+
+          ^^
+    +-----||---------------------------------------------------------------------------+
+    |     ||                                                                           |
+    |     ||                         METRICS-WIZARD JAVA AGENT                         |
+    |     ||                        ===========================                        |
+    |     ||                                                                           |
+    |  +--++-------------+           +-+--------------------------------------------+  |
+    |  |MBeansDiscovery  |           |M|  MetricsBuilder                            |  |
+    |  |                 |           |B|                              +----------+  |  |
+    |  |    +--+         |register   |e|  +--------------------+      |Metric    |  |  |
+    |  |    |L |-+       +---------->+a|  |BasicMetricsContext |-+    |REgistry  |  |  |
+    |  |    +--+ |       |           |n|  |                    | |    |          |  |  |
+    |  |     +---+       |           |s|  |           +-----+ ---------->+-----+ |Reporter
+    |  | Listening       |update     |B|  |           |-----|  | |    |  |-----| |--------\+--------+
+    |  | MBeanContext(s) +---------->+u|  |     Gauges|-----|  | |    |  |-----| |--------/| Server |
+    |  |                 |           |i|  |           |-----+ ---------->+-----+ |  |  |   +--------+
+    |  |    +--+         |           |l|  +--------------------+ |    |  Gauges  |  |  |
+    |  |    |P |-+       |unregister |d|   +---------------------+    |          |  |  |
+    |  |    +--+ |       +---------->+e|      MetricsContext(s)       |          |  |  |
+    |  |     +---+       |           |r|                              |          |  |  |
+    |  | Polling         |           | |                              |          |  |  |
+    |  | MBeanContext(s) |           | |                              |          |  |  |
+    |  |                 |           | |                              +----------+  |  |
+    |  +-----------------+           +-+--------------------------------------------+  |
+    +----------------------------------------------------------------------------------+
