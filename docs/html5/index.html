@@ -515,7 +515,8 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#_quick_primer">Quick Primer</a></li>
 <li><a href="#_configuration">Configuration</a></li>
 <li><a href="#_metrics_wizard_the_agent">Metrics-wizard, the agent</a></li>
-<li><a href="#_reporting">Reporting</a></li>
+<li><a href="#_reporting_tbd">Reporting - TBD</a></li>
+<li><a href="#_transformation_tbd">Transformation - TBD</a></li>
 </ul>
 </li>
 <li><a href="#_open_questions">Open questions</a></li>
@@ -611,7 +612,7 @@ to the server via UDP or HTTP transport. Such an approach means no changes requi
 existing application code.</p>
 </li>
 <li>
-<p>The Metrics-Wizard will use our forked metrics-datadog reporter for reporting these published
+<p>The Metrics-Wizard will use configured reporter for reporting these published
 metrics to server.</p>
 </li>
 </ul>
@@ -658,15 +659,11 @@ a MBean and registers it with JMX infrastructure (i.e. MBeanServer)</p>
 <div class="listingblock">
 <div class="title">metrics-wizard.yml</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">Mbean-poll-interval</span>: <span class="string"><span class="content">5</span></span> <span class="comment"># in seconds</span>
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">MBeans-discovery-poll-interval</span>: <span class="string"><span class="content">5</span></span> <span class="comment"># in seconds</span>
 <span class="key">thresholds</span>:
     <span class="key">metric-name-1</span>: <span class="string"><span class="content">threshold-value-1</span></span>
     <span class="key">metric-name-2</span>: <span class="string"><span class="content">threshold-value-2</span></span>
-<span class="key">reporter</span>:
-    <span class="key">type</span>: <span class="string"><span class="content">metricswizard.reporter.UdpReporter</span></span>
-    <span class="key">host</span>: <span class="string"><span class="content">192.168.1.1</span></span>
-    <span class="key">port</span>: <span class="string"><span class="content">1234</span></span>
-    <span class="key">interval</span>: <span class="string"><span class="content">10</span></span> <span class="comment"># in seconds</span></code></pre>
+<span class="key">reporter</span>: <span class="string"><span class="content">TBD</span></span></code></pre>
 </div>
 </div>
 </div>
@@ -699,12 +696,33 @@ detect attribute changes.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_reporting"><a class="anchor" href="#_reporting"></a>Reporting</h3>
+<h3 id="_reporting_tbd"><a class="anchor" href="#_reporting_tbd"></a>Reporting - TBD</h3>
 <div class="ulist">
 <ul>
 <li>
-<p>The Metrics-Wizard will use <a href="https://github.com/lookout/metrics-datadog">metrics-datadog</a>
-reporter for reporting these published metrics to server.</p>
+<p>The Metrics-Wizard will use the configured reporter for reporting these published
+metrics to server.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_transformation_tbd"><a class="anchor" href="#_transformation_tbd"></a>Transformation - TBD</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Must be able to transform the value</p>
+</li>
+<li>
+<p>Must be able to transform the name of the metric</p>
+</li>
+<li>
+<p>Must be configurable from the YAML configuration for a specific mbean name.
+E.g.
+<code>org.apache.ZookeeperService`ReplicatedServer_id1.QuorumSize=com.github.lookout.metricswizard.transforms..FancyIntTranform</code></p>
+</li>
+<li>
+<p>Should be configurable from the YAML configuration for a regular expression pattern</p>
 </li>
 </ul>
 </div>
@@ -734,7 +752,7 @@ i.e. if my service exposes a Gauge via the JMX reporter then the agent should
 ingest that as a Gauge in the agent</p>
 </li>
 <li>
-<p>If multiple applications are running in the JVM, we should create different MetricsRegistry()s
+<p>If multiple applications are running in the JVM, we should create different MetricsRegistry()s.
 <a href="https://dropwizard.github.io/metrics/3.1.0/manual/core/#metric-names">check this</a></p>
 </li>
 </ul>
@@ -791,7 +809,7 @@ ingest that as a Gauge in the agent</p>
 |  |    |L |-+       +----------&gt;+a|  |BasicMetricsContext |-+    |REgistry  |  |  |
 |  |    +--+ |       |           |n|  |                    | |    |          |  |  |
 |  |     +---+       |           |s|  |           +-----+ ----------&gt;+-----+ |Reporter
-|  | Listening       |modify     |B|  |           |-----|  | |    |  |-----| |--------\+--------+
+|  | Listening       |update     |B|  |           |-----|  | |    |  |-----| |--------\+--------+
 |  | MBeanContext(s) +----------&gt;+u|  |     Gauges|-----|  | |    |  |-----| |--------/| Server |
 |  |                 |           |i|  |           |-----+ ----------&gt;+-----+ |  |  |   +--------+
 |  |    +--+         |           |l|  +--------------------+ |    |  Gauges  |  |  |
@@ -810,7 +828,7 @@ ingest that as a Gauge in the agent</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-05-13 07:59:27 EDT
+Last updated 2015-05-13 09:51:01 EDT
 </div>
 </div>
 </body>

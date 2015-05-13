@@ -37,7 +37,7 @@ there are issues with using an external JMX gathering tool:
   to the server via UDP or HTTP transport. Such an approach means no changes required to the
   existing application code.
 
-* The Metrics-Wizard will use our forked metrics-datadog reporter for reporting these published
+* The Metrics-Wizard will use configured reporter for reporting these published
   metrics to server.
 
 == Design Thoughts
@@ -65,15 +65,11 @@ there are issues with using an external JMX gathering tool:
 [source,yaml]
 .metrics-wizard.yml
 ----
-Mbean-poll-interval: 5 # in seconds
+MBeans-discovery-poll-interval: 5 # in seconds
 thresholds:
     metric-name-1: threshold-value-1
     metric-name-2: threshold-value-2
-reporter:
-    type: metricswizard.reporter.UdpReporter
-    host: 192.168.1.1
-    port: 1234
-    interval: 10 # in seconds
+reporter: TBD
 ----
 
 === Metrics-wizard, the agent
@@ -94,24 +90,33 @@ reporter:
 * Once metrics are detected, they are stored in
 link:https://dropwizard.github.io/metrics/3.1.0/getting-started/#the-registry[Dropwizard MetricRegistry].
 
-=== Reporting
+=== Reporting - TBD
 
-* The Metrics-Wizard will use link:https://github.com/lookout/metrics-datadog[metrics-datadog]
-  reporter for reporting these published metrics to server.
+* The Metrics-Wizard will use the configured reporter for reporting these published
+  metrics to server.
+
+=== Transformation - TBD
+
+* Must be able to transform the value
+* Must be able to transform the name of the metric
+* Must be configurable from the YAML configuration for a specific mbean name.
+  E.g.
+  `org.apache.ZookeeperService`ReplicatedServer_id1.QuorumSize=com.github.lookout.metricswizard.transforms..FancyIntTranform`
+* Should be configurable from the YAML configuration for a regular expression pattern
 
 == Open questions
 
- * Class path conflicts: what happens if we use dropwizard-metrics 0.2 and the JVM
-   processes are using dropwizard-metrics 0.3?
- * Are there special types of JMX MBeans that are exposed by off-the-shelf services
-   like Cassandra or Kafka, which wouldn’t be normal Long/Double/Floats
- * Can the agent get command line options? Property values?
-   link:https://docs.oracle.com/javase/7/docs/api/java/lang/instrument/package-summary.html[YES]
- * a JMXMetric from dropwizard-metric should be processed like the metric of its type,
-   i.e. if my service exposes a Gauge via the JMX reporter then the agent should
-   ingest that as a Gauge in the agent
- * If multiple applications are running in the JVM, we should create different MetricsRegistry()s
-   link:https://dropwizard.github.io/metrics/3.1.0/manual/core/#metric-names[check this]
+* Class path conflicts: what happens if we use dropwizard-metrics 0.2 and the JVM
+  processes are using dropwizard-metrics 0.3?
+* Are there special types of JMX MBeans that are exposed by off-the-shelf services
+  like Cassandra or Kafka, which wouldn’t be normal Long/Double/Floats
+* Can the agent get command line options? Property values?
+  link:https://docs.oracle.com/javase/7/docs/api/java/lang/instrument/package-summary.html[YES]
+* a JMXMetric from dropwizard-metric should be processed like the metric of its type,
+  i.e. if my service exposes a Gauge via the JMX reporter then the agent should
+  ingest that as a Gauge in the agent
+* If multiple applications are running in the JVM, we should create different MetricsRegistry()s.
+  link:https://dropwizard.github.io/metrics/3.1.0/manual/core/#metric-names[check this]
 
 == An awful diagram
 
@@ -136,6 +141,7 @@ link:https://dropwizard.github.io/metrics/3.1.0/getting-started/#the-registry[Dr
                            | JVM              |
                            +------------------+
 
+
 == An awful internal diagram
 
     +-------------+
@@ -154,7 +160,7 @@ link:https://dropwizard.github.io/metrics/3.1.0/getting-started/#the-registry[Dr
     |  |    |L |-+       +---------->+a|  |BasicMetricsContext |-+    |REgistry  |  |  |
     |  |    +--+ |       |           |n|  |                    | |    |          |  |  |
     |  |     +---+       |           |s|  |           +-----+ ---------->+-----+ |Reporter
-    |  | Listening       |modify     |B|  |           |-----|  | |    |  |-----| |--------\+--------+
+    |  | Listening       |update     |B|  |           |-----|  | |    |  |-----| |--------\+--------+
     |  | MBeanContext(s) +---------->+u|  |     Gauges|-----|  | |    |  |-----| |--------/| Server |
     |  |                 |           |i|  |           |-----+ ---------->+-----+ |  |  |   +--------+
     |  |    +--+         |           |l|  +--------------------+ |    |  Gauges  |  |  |

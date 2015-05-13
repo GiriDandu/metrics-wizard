@@ -16,7 +16,7 @@
 
 === Create `MBeanContext`:
 . `MBeanContext` is derived from `TimerTask` and contains: MBean's ObjectName,
-  (fixme: and reference to MBeanServer)
+  and reference to MBeanServer
 .. If MBean does not generate an attribute change notification, then enable polling
 .. Otherwise, create and register a `MBeanNotificationListener` for the MBean
 . Invoke `MBeansBuilder`'s register method
@@ -45,10 +45,10 @@
 . Add BasicMetricsContext to MetricsContextRegistry
 . It converts each MBean attribute with long/double/float type to a separate
   com.codehale.metric.Gauge.
-. Add all gauges to a registry inside BasicMetricsContext
+. Add all gauges to a map inside BasicMetricsContext
 . Add all the Gauges to MetricsRegistry in MetricsBuilder
 
-=== modify callback - from MBeansDiscovery
+=== update callback - from MBeansDiscovery
 . Lookup BasicMetricsContext from MetricsContextRegistry
 . Walk through all the gauges and update them
 

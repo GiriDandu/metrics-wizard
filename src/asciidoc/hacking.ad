@@ -30,8 +30,7 @@ The metric-wizard source code can be found in a few different directories:
 * `src/` - source tree
 ** `/asciidoc` - link:http://asciidoctor.org[Asciidoctor]-based documentation files
 ** `/main/java/com/github/lookout/metricswizard/` - Directory contains Metrics-Wizard code
-*** `WizardAgent.java` - Main agent class that contains `premain` method.
-*** `/mbeanDiscovery` - MBean discovery module
+*** `/mbeansDiscovery` - MBeans discovery module
 *** `/metricsBuilder' - builds the Metrics registry from MBeans
 ** `/test/groovy/com/github/lookout/metricswizard` - spock tests
 * `metricswizardintegtest` - Integration application that launches with metrics-wizard agent
@@ -39,7 +38,7 @@ The metric-wizard source code can be found in a few different directories:
 == Classes
 
 * `WizardAgent`
-** Central class that contains instances of `MBeanDiscovery`, `MetricsBuilder`, and
+** Central class that contains instances of `MBeansDiscovery`, `MetricsBuilder`, and
    `MetricsReporter`.
 * `MBeansDiscovery`
 ** Discovers the MBeans by listening or polling the MBean server
