@@ -1,5 +1,7 @@
 # Metrics Wizard
 
+[![Join the chat at https://gitter.im/lookout/metrics-wizard](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/lookout/metrics-wizard?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Metrics Wizard is a Java agent for aggregating and reporting on metrics from
 any JVM process.
 
