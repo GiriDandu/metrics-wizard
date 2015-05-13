@@ -7,14 +7,14 @@ plugins {
     id 'org.asciidoctor.gradle.asciidoctor' version '1.5.1'
 }
 
+apply plugin: 'groovy'
+
 //////////////////////////////////////////////////////
 //  BUILD META-DATA
 group = 'com.github.lookout'
 version = '0.0.1'
 description = 'Metrics monitoring agent'
-/* Ensure we're at least JDK6 bttecode compatible */
-targetCompatibility = '1.6'
-sourceCompatibility = '1.6'
+targetCompatibility = '1.7'
 
 //////////////////////////////////////////////////////
 
@@ -35,7 +35,7 @@ dependencies {
 
 
 //////////////////////////////////////////////////////
-//  TESTS
+//  TASKS
 
 test {
     testLogging {
@@ -47,8 +47,11 @@ test {
     }
 }
 
-/* We should always run tests before creating an artifact */
-assemble.dependsOn check
+jar {
+    manifest {
+        attributes 'Premain-Class' : 'metricswizard.WizardAgent'
+    }
+}
 //////////////////////////////////////////////////////
 
 
@@ -85,7 +88,7 @@ asciidoctor {
 task publishDocs(type: Exec) {
     /* If for whatever reason you need to force-push the gh-pages branch this
      * command will work:
-     *    % git push origin `git subtree split --prefix docs/html5 master`:gh-pages --force
+     * % git push origin `git subtree split --prefix docs/html5 master`:gh-pages --force
      */
 
     group 'Publishing'
