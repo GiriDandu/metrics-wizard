@@ -1,0 +1,60 @@
+= Hacking on metric-wizard
+
+== Getting Started
+
+=== System requirements
+
+* JDK7
+
+=== Running the tests
+
+* `./gradlew check`: This will run the `test` task, which runs spock tests
+
+=== Building the documentation
+
+* `./gradlew asciidoc`
+
+=== Building Jar file
+
+* `./gradlew Jar`
+
+=== Running the Metrics-wizard with Application
+
+* `java -javaagent=metrics-wizard.jar -jar application.jar app_arg1 app_arg2`
+
+
+== Code Structure
+
+The metric-wizard source code can be found in a few different directories:
+
+* `src/` - source tree
+** `/asciidoc` - link:http://asciidoctor.org[Asciidoctor]-based documentation files
+** `/main/java/com/github/lookout/metricswizard/` - Directory contains Metrics-Wizard code
+*** `WizardAgent.java` - Main agent class that contains `premain` method.
+*** `/mbeanDiscovery` - MBean discovery module
+*** `/metricsBuilder' - builds the Metrics registry from MBeans
+** `/test/groovy/com/github/lookout/metricswizard` - spock tests
+* `metricswizardintegtest` - Integration application that launches with metrics-wizard agent
+
+== Classes
+
+* `WizardAgent`
+** Central class that contains instances of `MBeanDiscovery`, `MetricsBuilder`, and
+   `MetricsReporter`.
+* `MBeansDiscovery`
+** Discovers the MBeans by listening or polling the MBean server
+** It emits the register, change or unregister notifications via MBeansBuilder interface.
+* `MBeansBuilder`
+** Defines the interface between MBeansDiscovery and MetricsBuilder
+* `MetricsBuilder` derived from `MBeansBuilder`
+** Listens to MBeans via MBeansBuilder interface
+** Creates a context for each MBean
+*** `MetricsContext` defines an interface
+*** `BasicMetricsContext`
+**** implements `MetricsContext` interface
+**** converts each MBean attribute with long/double/float type to a unique com.codehale.metric.Gauge.
+*** future: `MeterMetricsContext` converts MBean to `com.codehale.metric.Meter`
+*** future: `HistogramMetricsContext` converts MBean to `com.codehale.metric.Histogram`
+* `WizardReporter` - TBD
+** Instance is created from classname (in the `type` field) specified in the config
+** It will use either udp or http transport, host, port, etc specified in the configuration
