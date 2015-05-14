@@ -3,7 +3,6 @@ package com.github.lookout.metricswizard.metricsbuilder;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
-import com.codahale.metrics.MetricRegistry;
 import com.github.lookout.metricswizard.mbeansdiscovery.MBeansBuilder;
 
 
@@ -11,12 +10,10 @@ import com.github.lookout.metricswizard.mbeansdiscovery.MBeansBuilder;
  * Listens to MBeans via MBeansBuilder interface.
  */
 public class MetricsBuilder implements MBeansBuilder {
-    //private MetricRegistry metricRegistry;
 
     /** Constructor. */
     public MetricsBuilder() {
         /** MetricRegistry to store metrics that are consumed by Reporter  */
-        //this.metricRegistry = new MetricRegistry();
     }
 
     /** Register MBean notification. */

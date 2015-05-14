@@ -9,20 +9,9 @@ import javax.management.*;
  */
 public class MBeansContext extends TimerTask {
 
-    /** MBean object name. */
-    //ObjectName mbean;
-
-    /** MBean Server associated with objectName. */
-    //MBeanServer mBeanServer;
-
-    /** Owner. */
-    //MBeansDiscovery mBeansDiscovery;
 
     /** Constructor. */
     MBeansContext(MBeansDiscovery mBeansDiscovery, MBeanServer mBeanServer, ObjectName mbean) {
-        //this.mBeansDiscovery = mBeansDiscovery;
-        //this.mBeanServer = mBeanServer;
-        //this.mbean = mbean;
 
         /** Register processing */
         register();
@@ -31,7 +20,7 @@ public class MBeansContext extends TimerTask {
     private void register() {
         /** Send Register Notify to MBeansBuilder */
 
-        /** If Mbean does not send notifications, then start timer Timer */
+        /** If Mbean does not emit notifications, then start timer Timer. */
 
         /** Otherwise, create a listener and register it with MBeansServer*/
     }
@@ -46,8 +35,9 @@ public class MBeansContext extends TimerTask {
         /** Send Unregister Notify to MBeansBuilder */
     }
 
-    /** Timeout, in case timer is scheduled. */
     @Override
-    public void run() { update(); }
+    public void run() {
+        /** if timer is launched for polling; on timeout report update */
+    }
 }
 

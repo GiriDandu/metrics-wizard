@@ -12,37 +12,20 @@ import com.github.lookout.metricswizard.metricsbuilder.MetricsBuilder;
  * (i.e. MBean attributes) to upstream server
  */
 public class WizardAgent {
-    private MBeansDiscovery mBeansDiscovery;
-    private MetricsBuilder metricsBuilder;
+    private static MBeansDiscovery mBeansDiscovery;
+    private static MetricsBuilder metricsBuilder;
 
-    /** Constructor. */
-    WizardAgent() {
-    }
+    /** Define a premain method to launch java agent. */
+    public static void premain(final String agentArgs, final Instrumentation inst)
+            throws IOException {
 
-    /** Start the agent. */
-    void start(String agentArgs) {
+        /** Read Config - filename in "agentArgs" */
 
         /** Create Metrics builder */
         metricsBuilder = new MetricsBuilder();
 
         /** Create a discovery class to discover MBeans */
         mBeansDiscovery = new MBeansDiscovery(metricsBuilder);
-
-        /** Read Config */
-
-        /** Start discovery */
-        mBeansDiscovery.start();
-    }
-
-    /** Define a premain method to launch java agent. */
-    public static void premain(final String agentArgs, final Instrumentation inst)
-            throws IOException {
-
-        /** Create Wizard agent */
-        WizardAgent agent = new WizardAgent();
-
-        /** Start the agent */
-        agent.start(agentArgs);
     }
 }
 

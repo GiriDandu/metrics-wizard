@@ -16,6 +16,7 @@ group = 'com.github.lookout'
 version = '0.0.1'
 description = 'Metrics monitoring agent'
 targetCompatibility = '1.7'
+sourceCompatibility = '1.7'
 
 //////////////////////////////////////////////////////
 
@@ -50,7 +51,7 @@ test {
 
 jar {
     manifest {
-        attributes 'Premain-Class' : 'metricswizard.WizardAgent'
+        attributes 'Premain-Class' : 'com.github.lookout.metricswizard.WizardAgent'
     }
 }
 //////////////////////////////////////////////////////
