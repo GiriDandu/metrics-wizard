@@ -1,0 +1,39 @@
+= #metrics-wizard Configuration
+
+== Configuration Details:
+. This configuration contains metrics discovery poll interval and reporter specific configuration
+.. The examples configuration below
+
+[source,yaml]
+.metrics-wizard.yml for console reporter
+----
+MBeans-discovery-poll-interval: 5 # in seconds
+reporter:
+    type: console
+    durationUnit: milliseconds
+    frequency: 2 minutes
+    timeZone: UTC
+    output: stdout
+----
+
+.metrics-wizard.yml for datadog reporter with UDP transport
+----
+MBeans-discovery-poll-interval: 5 # in seconds
+reporter:
+    type: datadog
+    transport:
+      type: udp
+      statsdHost: "localhost"
+      port: 8125
+----
+.metrics-wizard.yml for datadog reporter with HTTP transport
+----
+MBeans-discovery-poll-interval: 5 # in seconds
+reporter:
+    type: datadog
+    transport:
+      type: http
+      apiKey: abc123
+      connectTimeout: 10 seconds
+      socketTimeout: 10 seconds
+----

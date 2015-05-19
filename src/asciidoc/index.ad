@@ -16,29 +16,49 @@ image:https://travis-ci.org/lookout/metrics-wizard.svg?branch=master["Build Stat
 
 * <<hacking.ad#,Hacking>>
 * <<workflow.ad#,WorkFlow>>
+* <<configuration.ad#, Configuration>>
 
 == The Problem
 
-Most of the applications expose their metrics via JMX. Usually an external agent connects to the
-JMX port and gathers all the information.
+Applications expose their metrics via JMX interface.
 
-As discussed in this link:http://hackers.lookout.com/2015/01/cassandra-monitoring/[article]
-there are issues with using an external JMX gathering tool:
+Usually a remote client connects to the JMX port and gathers all the metrics. However, as
+discussed in this link:http://hackers.lookout.com/2015/01/cassandra-monitoring/[article]
+there are issues with this approach:
 
-* it has to poll the application's JMX agent
-* authenticate to avoid exposing vulnerabilities
-* redundancy issues if reporting tool dies
+* the remote client has to poll the application's JMX interface
+* application may require authentication to avoid exposing vulnerabilities
+* redundancy issues if remote client dies
 
 == The Solution
 
 * Metrics Wizard is a Java agent for aggregating and reporting metrics from any JVM process.
 
-* It detects the metrics of type Long, Integer, Double, or Float and periodically reports it
-  to the server via UDP or HTTP transport. Such an approach means no changes required to the
-  existing application code.
+* It runs along side the application on same JVM and discovers MBeanServer(s) and MBean(s)
+  as they become available on the JMX interface.
 
-* The Metrics-Wizard will use configured reporter for reporting these published
-  metrics to server.
+* It transforms these MBeans and/or attributes into dropwizard metrics.
+
+* The reporter publishes metrics to the upstream server. The metrics-wizard allows user to
+  configure the reporter, underlying transport, attributes to be published, etc.
+
+* The agent consists of MBeansDiscovery, MetricsBuilder and Reporter
+
+    SNMPReporter   <-.
+                      \
+    DatadogReporter <-- Reporter
+                      /    ^
+    StatsdReporter <-`     |
+                           |
+                    [MetricRegistry]
+                           ^
+                           |
+                           |
+                       /Transform/
+                           ^
+                           |
+                           |
+                    MetricsBuilder <--/MBean found/--  MBeansDiscovery <-- JMX
 
 == Design Thoughts
 
@@ -54,73 +74,103 @@ there are issues with using an external JMX gathering tool:
   that consists of attributes (i.e. metrics), operations, notifications, etc.
 
 * For each end-point (i.e. metric, statistic, gauge, meter, etc), application creates
-  a MBean and registers it with JMX infrastructure (i.e. MBeanServer)
+  a MBean and registers it with JMX infrastructure (i.e. MBeanServer).
 
-=== Configuration
+* A JVM can contain any number of MBeanServer(s); the application can create and release
+  them using MBeanServerFactory.
 
-* Define a threshold for a metric which would create a “monitor”
+=== MBeansDiscovery
 
-* Define and configure a reporter for the agent to use with a fully qualified class name
+* Periodically scans MBeanServerFactory and discovers MBeanServer(s)
 
-[source,yaml]
-.metrics-wizard.yml
-----
-MBeans-discovery-poll-interval: 5 # in seconds
-thresholds:
-    metric-name-1: threshold-value-1
-    metric-name-2: threshold-value-2
-reporter: TBD
-----
-
-=== Metrics-wizard, the agent
-
-* In the premain routine, agent scans all the extant MBeans (metrics) from MBeanServer.
+* Scans all the extant MBeans (metrics) from each MBeanServer.
 
 * When an MBean is registered or unregistered in the MBeanServer, a MBeanServerNotification
   Notification is emitted. The agent learns about these by registering a listener to
   "MBeanServerDelegate" MBean.
 
-* If MBean generates notification (at run-time MBeanServer exposes this capability in MBean's
-  MBeanInfo object), then agent registers a NotificationListener to receive notifications from
-  that MBean.
+* If MBean generates an attribute change notification (at run-time MBeanServer exposes this
+  capability in MBean's MBeanInfo object), then agent registers a NotificationListener to
+  receive notifications from that MBean.
 
 * If MBean does no generate notifications, then agent polls the MBean periodically and
   detect attribute changes.
 
-* Once metrics are detected, they are stored in
+* The MBeansDiscovery emits following MBean notifications to MetricsBuilder:
+** register - given MBean is registered on a MBeanServer
+** update - for a given MBean, update attribute values in the local cache
+** unregister - given MBean is unregistered from a MBeanServer
+
+=== MetricsBuilder
+
+* MetricsBuilder transforms the MBeans and its attributes into dropwizard metric(s)
+  (e.g. Gauge, Counter, Metric, etc)
+
+* In first phase, MetricsBuilder will create a Gauge for each MBean attribute with "Number" data type.
+
+* Once metrics are detected, they are stored in the
 link:https://dropwizard.github.io/metrics/3.1.0/getting-started/#the-registry[Dropwizard MetricRegistry].
+  The reporter feeds off of the MetricRegistry.
 
-=== Reporting - TBD
+=== Reporting
 
-* The Metrics-Wizard will use the configured reporter for reporting these published
-  metrics to server.
+* The Metrics-Wizard will use the configured reporter for reporting these discovered
+  metrics to reporter server.
+* The Metrics Agent will create the reporter factory based on configuration.
+* It then creates the reporter using the metrics registry with dynamically discovered metrics.
+* Reporter then periodically reports the metrics to the reporter server. This processing inside
+  the reporter is not in the scope of this library.
 
-=== Transformation - TBD
+=== Error Handling
 
-* Must be able to transform the value
-* Must be able to transform the name of the metric
-* Must be configurable from the YAML configuration for a specific mbean name.
-  E.g.
-  `org.apache.ZookeeperService`ReplicatedServer_id1.QuorumSize=com.github.lookout.metricswizard.transforms..FancyIntTranform`
-* Should be configurable from the YAML configuration for a regular expression pattern
+* If agent fails to gather MBean and/or attribute from JMX interface, it will log an event and
+  stops reporting the corresponding Metric(s) to the upstream Server, until the issue is resolved.
 
-== Open questions
+* When MBean is unregistered from the MBeanServer, the agent stops monitoring and
+  reporting the corresponding Metric(s) to the server.
+
+* The agent maintains metric(s) that allows user to monitor and evaluate agent functionality.
+  The agent report following set of statistics:
+** NbrMBeanServers - number of MBeanServers monitored
+** NbrMBeansRegistered -  number of MBeans registered
+** NbrMBeansUnregistered -  number of MBeans unregistered
+** NbrMBeanOpsFailed - number of MBeans operations failed
+** NbrReporterInvocations - number of time reported has been invoked
+
+* Transport failures encountered by the reporter class are out of scope of the agent.
+
+=== Open questions
 
 * Class path conflicts: what happens if we use dropwizard-metrics 0.2 and the JVM
   processes are using dropwizard-metrics 0.3?
+
 * Are there special types of JMX MBeans that are exposed by off-the-shelf services
   like Cassandra or Kafka, which wouldn’t be normal Long/Double/Floats
-* Can the agent get command line options? Property values?
-  link:https://docs.oracle.com/javase/7/docs/api/java/lang/instrument/package-summary.html[YES]
-* a JMXMetric from dropwizard-metric should be processed like the metric of its type,
-  i.e. if my service exposes a Gauge via the JMX reporter then the agent should
-  ingest that as a Gauge in the agent
-* If multiple applications are running in the JVM, we should create different MetricsRegistry()s.
+
+=== Future
+
+* Configuration
+
+** Define a threshold for a metric
+
+* Create Metric(s) for MBean attribute with complex data types (e.g. CompositeDataType)
+
+* Create Metric(s) for MBean with known data types (e.g. com.codahale.metrics.Meter)
+
+* Option to create MetricsRegistry(s) per MBeanServer
   link:https://dropwizard.github.io/metrics/3.1.0/manual/core/#metric-names[check this]
 
-== An awful diagram
+* Transformation
 
-                                                       (Datagod, statsd, etc)
+** Transform the name or value of the metric
+**  Configurable from the YAML configuration for a specific mbean name.
+  E.g.
+  `org.apache.ZookeeperServiceReplicatedServer_id1.QuorumSize=com.github.lookout.metricswizard.FancyIntTranform`
+** Should be configurable from the YAML configuration for a regular expression pattern
+
+== An awful block diagram
+
+                                                       (Datadogd, statsd, etc)
                                                           +---------+
                                                           | Server  |
                                                           +---^-----+
@@ -157,7 +207,7 @@ link:https://dropwizard.github.io/metrics/3.1.0/getting-started/#the-registry[Dr
     |  |MBeansDiscovery  |           |M|  MetricsBuilder                            |  |
     |  |                 |           |B|                              +----------+  |  |
     |  |    +--+         |register   |e|  +--------------------+      |Metric    |  |  |
-    |  |    |L |-+       +---------->+a|  |BasicMetricsContext |-+    |REgistry  |  |  |
+    |  |    |L |-+       +---------->+a|  |BasicMetricsContext |-+    |Registry  |  |  |
     |  |    +--+ |       |           |n|  |                    | |    |          |  |  |
     |  |     +---+       |           |s|  |           +-----+ ---------->+-----+ |Reporter
     |  | Listening       |update     |B|  |           |-----|  | |    |  |-----| |--------\+--------+

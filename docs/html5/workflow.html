@@ -518,10 +518,11 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#_metricsbuilder">MetricsBuilder</a>
 <ul class="sectlevel2">
 <li><a href="#_register_callback_from_mbeansdiscovery">register callback - from MBeansDiscovery</a></li>
-<li><a href="#_modify_callback_from_mbeansdiscovery">modify callback - from MBeansDiscovery</a></li>
+<li><a href="#_update_callback_from_mbeansdiscovery">update callback - from MBeansDiscovery</a></li>
 <li><a href="#_unregister_callback_from_mbeansdiscovery">unregister callback - from MBeansDiscovery</a></li>
 </ul>
 </li>
+<li><a href="#_reporterbuilder">ReporterBuilder</a></li>
 </ul>
 </div>
 </div>
@@ -695,7 +696,7 @@ com.codehale.metric.Gauge.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_modify_callback_from_mbeansdiscovery"><a class="anchor" href="#_modify_callback_from_mbeansdiscovery"></a>modify callback - from MBeansDiscovery</h3>
+<h3 id="_update_callback_from_mbeansdiscovery"><a class="anchor" href="#_update_callback_from_mbeansdiscovery"></a>update callback - from MBeansDiscovery</h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
@@ -722,10 +723,28 @@ com.codehale.metric.Gauge.</p>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_reporterbuilder"><a class="anchor" href="#_reporterbuilder"></a>ReporterBuilder</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Creates the configured reporter factory.</p>
+</li>
+<li>
+<p>Factory builds the reporter using metrics registry.</p>
+</li>
+<li>
+<p>Created reporter runs in its own thread and periodically polls the metrics in the metrics registry</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-05-13 09:49:52 EDT
+Last updated 2015-05-19 15:11:58 EDT
 </div>
 </div>
 </body>

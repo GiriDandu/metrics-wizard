@@ -56,4 +56,9 @@
 . Lookup BasicMetricsContext from MetricsContextRegistry
 . Delete BasicMetricsContext
 
+== ReporterBuilder
+. Creates the configured reporter factory.
+. Factory builds the reporter using metrics registry.
+. Created reporter runs in its own thread and periodically polls the metrics in the metrics registry
+
 

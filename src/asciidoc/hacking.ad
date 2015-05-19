@@ -30,8 +30,9 @@ The metric-wizard source code can be found in a few different directories:
 * `src/` - source tree
 ** `/asciidoc` - link:http://asciidoctor.org[Asciidoctor]-based documentation files
 ** `/main/java/com/github/lookout/metricswizard/` - Directory contains Metrics-Wizard code
-*** `/mbeansDiscovery` - MBeans discovery module
-*** `/metricsBuilder' - builds the Metrics registry from MBeans
+*** `/mbeansdiscovery` - MBeans discovery module
+*** `/metricsbuilder' - builds the Metrics registry from MBeans
+*** `/metricsreporters` - creates the configured reporter
 ** `/test/groovy/com/github/lookout/metricswizard` - spock tests
 * `metricswizardintegtest` - Integration application that launches with metrics-wizard agent
 
@@ -39,7 +40,7 @@ The metric-wizard source code can be found in a few different directories:
 
 * `WizardAgent`
 ** Central class that contains instances of `MBeansDiscovery`, `MetricsBuilder`, and
-   `MetricsReporter`.
+   `ReporterBuilder`.
 * `MBeansDiscovery`
 ** Discovers the MBeans by listening or polling the MBean server
 ** It emits the register, change or unregister notifications via MBeansBuilder interface.
@@ -54,6 +55,11 @@ The metric-wizard source code can be found in a few different directories:
 **** converts each MBean attribute with long/double/float type to a unique com.codehale.metric.Gauge.
 *** future: `MeterMetricsContext` converts MBean to `com.codehale.metric.Meter`
 *** future: `HistogramMetricsContext` converts MBean to `com.codehale.metric.Histogram`
-* `WizardReporter` - TBD
-** Instance is created from classname (in the `type` field) specified in the config
-** It will use either udp or http transport, host, port, etc specified in the configuration
+* `ReporterBuilder`
+** Creates the configured reporter factory and builds the configured reporter. The reporter will
+use the metric registry to process the discovered metrics and forwards them to the reporter.
+*** `ReporterFactoryContainer` - Top level model class that contains the configured reporter factory
+*** `ConsoleReporterFactory` - Contains the console reporter specific configuration. Builds the
+reporter based of type console
+*** `DatadogReporterFactory` - Contains the datadog reporter specific configuration. Builds the
+reporter based of type datadog. It will use either udp or http transport

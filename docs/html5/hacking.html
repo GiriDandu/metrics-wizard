@@ -596,10 +596,13 @@ table.CodeRay td.code>pre{padding:0}
 <div class="ulist">
 <ul>
 <li>
-<p><code>/mbeansDiscovery</code> - MBeans discovery module</p>
+<p><code>/mbeansdiscovery</code> - MBeans discovery module</p>
 </li>
 <li>
-<p>`/metricsBuilder' - builds the Metrics registry from MBeans</p>
+<p>`/metricsbuilder' - builds the Metrics registry from MBeans</p>
+</li>
+<li>
+<p><code>/metricsreporters</code> - creates the configured reporter</p>
 </li>
 </ul>
 </div>
@@ -628,7 +631,7 @@ table.CodeRay td.code>pre{padding:0}
 <ul>
 <li>
 <p>Central class that contains instances of <code>MBeansDiscovery</code>, <code>MetricsBuilder</code>, and
-<code>MetricsReporter</code>.</p>
+<code>ReporterBuilder</code>.</p>
 </li>
 </ul>
 </div>
@@ -696,14 +699,27 @@ table.CodeRay td.code>pre{padding:0}
 </div>
 </li>
 <li>
-<p><code>WizardReporter</code> - TBD</p>
+<p><code>ReporterBuilder</code></p>
 <div class="ulist">
 <ul>
 <li>
-<p>Instance is created from classname (in the <code>type</code> field) specified in the config</p>
+<p>Creates the configured reporter factory and builds the configured reporter. The reporter will
+use the metric registry to process the discovered metrics and forwards them to the reporter.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>ReporterFactoryContainer</code> - Top level model class that contains the configured reporter factory</p>
 </li>
 <li>
-<p>It will use either udp or http transport, host, port, etc specified in the configuration</p>
+<p><code>ConsoleReporterFactory</code> - Contains the console reporter specific configuration. Builds the
+reporter based of type console</p>
+</li>
+<li>
+<p><code>DatadogReporterFactory</code> - Contains the datadog reporter specific configuration. Builds the
+reporter based of type datadog. It will use either udp or http transport</p>
+</li>
+</ul>
+</div>
 </li>
 </ul>
 </div>
@@ -715,7 +731,7 @@ table.CodeRay td.code>pre{padding:0}
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-05-13 09:38:05 EDT
+Last updated 2015-05-19 15:26:42 EDT
 </div>
 </div>
 </body>
