@@ -5,7 +5,7 @@
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.0">
-<title>Hacking on metric-wizard</title>
+<title>#metrics-wizard Configuration</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic|Noto+Serif:400,400italic,700,700italic|Droid+Sans+Mono:400">
 <style>
 /* Asciidoctor default stylesheet | MIT License | http://asciidoctor.org */
@@ -502,249 +502,84 @@ table.CodeRay td.code>pre{padding:0}
 </head>
 <body class="article toc2 toc-right">
 <div id="header">
-<h1>Hacking on metric-wizard</h1>
+<h1>#metrics-wizard Configuration</h1>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_getting_started">Getting Started</a>
-<ul class="sectlevel2">
-<li><a href="#_system_requirements">System requirements</a></li>
-<li><a href="#_running_the_tests">Running the tests</a></li>
-<li><a href="#_building_the_documentation">Building the documentation</a></li>
-<li><a href="#_building_jar_file">Building Jar file</a></li>
-<li><a href="#_running_the_metrics_wizard_with_application">Running the Metrics-wizard with Application</a></li>
-</ul>
-</li>
-<li><a href="#_code_structure">Code Structure</a></li>
-<li><a href="#_classes">Classes</a></li>
+<li><a href="#_configuration_details">Configuration Details:</a></li>
+<li><a href="#_the_example_configuration">The example configuration</a></li>
 </ul>
 </div>
 </div>
 <div id="content">
 <div class="sect1">
-<h2 id="_getting_started"><a class="anchor" href="#_getting_started"></a>Getting Started</h2>
+<h2 id="_configuration_details"><a class="anchor" href="#_configuration_details"></a>Configuration Details:</h2>
 <div class="sectionbody">
-<div class="sect2">
-<h3 id="_system_requirements"><a class="anchor" href="#_system_requirements"></a>System requirements</h3>
-<div class="ulist">
-<ul>
+<div class="olist arabic">
+<ol class="arabic">
 <li>
-<p>JDK7</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_running_the_tests"><a class="anchor" href="#_running_the_tests"></a>Running the tests</h3>
-<div class="ulist">
-<ul>
+<p>This configuration contains metrics discovery poll interval and reporter specific configuration</p>
+<div class="olist lowerroman">
+<ol class="lowerroman" type="i">
 <li>
-<p><code>./gradlew check</code>: This will run the <code>test</code> task, which runs spock tests</p>
+<p>MBeans-discovery-poll-interval: Poll time to discover and update the mbeans</p>
 </li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_building_the_documentation"><a class="anchor" href="#_building_the_documentation"></a>Building the documentation</h3>
-<div class="ulist">
-<ul>
 <li>
-<p><code>./gradlew asciidoc</code></p>
+<p>reporter: The type of reporter to push the metrics and the reporter specific configuration</p>
 </li>
-</ul>
+</ol>
 </div>
-</div>
-<div class="sect2">
-<h3 id="_building_jar_file"><a class="anchor" href="#_building_jar_file"></a>Building Jar file</h3>
-<div class="ulist">
-<ul>
-<li>
-<p><code>./gradlew Jar</code></p>
 </li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_running_the_metrics_wizard_with_application"><a class="anchor" href="#_running_the_metrics_wizard_with_application"></a>Running the Metrics-wizard with Application</h3>
-<div class="ulist">
-<ul>
-<li>
-<p><code>java -javaagent=metrics-wizard.jar -jar application.jar app_arg1 app_arg2</code></p>
-</li>
-</ul>
-</div>
+</ol>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_code_structure"><a class="anchor" href="#_code_structure"></a>Code Structure</h2>
+<h2 id="_the_example_configuration"><a class="anchor" href="#_the_example_configuration"></a>The example configuration</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>The metric-wizard source code can be found in a few different directories:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>src/</code> - source tree</p>
-<div class="ulist">
-<ul>
-<li>
-<p><code>/asciidoc</code> - <a href="http://asciidoctor.org">Asciidoctor</a>-based documentation files</p>
-</li>
-<li>
-<p><code>/main/java/com/github/lookout/metricswizard/</code> - Directory contains Metrics-Wizard code</p>
-<div class="ulist">
-<ul>
-<li>
-<p><code>/mbeansdiscovery</code> - MBeans discovery module</p>
-</li>
-<li>
-<p>`/metricsbuilder' - builds the Metrics registry from MBeans</p>
-</li>
-<li>
-<p><code>/metricsreporters</code> - creates the configured reporter</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p><code>/test/groovy/com/github/lookout/metricswizard</code> - spock tests</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p><code>metricswizardintegtest</code> - Integration application that launches with metrics-wizard agent</p>
-</li>
-</ul>
+<div class="listingblock">
+<div class="title">metrics-wizard.yml for console reporter</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">MBeans-discovery-poll-interval</span>: <span class="string"><span class="content">5</span></span> <span class="comment"># in seconds</span>
+<span class="key">reporter</span>:
+    <span class="key">type</span>: <span class="string"><span class="content">console</span></span>
+    <span class="key">durationUnit</span>: <span class="string"><span class="content">milliseconds</span></span>
+    <span class="key">frequency</span>: <span class="string"><span class="content">2 minutes</span></span>
+    <span class="key">timeZone</span>: <span class="string"><span class="content">UTC</span></span>
+    <span class="key">output</span>: <span class="string"><span class="content">stdout</span></span></code></pre>
 </div>
 </div>
+<div class="listingblock">
+<div class="title">metrics-wizard.yml for datadog reporter with UDP transport</div>
+<div class="content">
+<pre>MBeans-discovery-poll-interval: 5 # in seconds
+reporter:
+    type: datadog
+    transport:
+      type: udp
+      statsdHost: "localhost"
+      port: 8125</pre>
 </div>
-<div class="sect1">
-<h2 id="_classes"><a class="anchor" href="#_classes"></a>Classes</h2>
-<div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p><code>WizardAgent</code></p>
-<div class="ulist">
-<ul>
-<li>
-<p>Central class that contains instances of <code>MBeansDiscovery</code>, <code>MetricsBuilder</code>, and
-<code>ReporterBuilder</code>.</p>
-</li>
-</ul>
 </div>
-</li>
-<li>
-<p><code>MBeansDiscovery</code></p>
-<div class="ulist">
-<ul>
-<li>
-<p>Discovers the MBeans by listening or polling the MBean server</p>
-</li>
-<li>
-<p>It emits the register, change or unregister notifications via MBeansBuilder interface.</p>
-</li>
-</ul>
+<div class="listingblock">
+<div class="title">metrics-wizard.yml for datadog reporter with HTTP transport</div>
+<div class="content">
+<pre>MBeans-discovery-poll-interval: 5 # in seconds
+reporter:
+    type: datadog
+    transport:
+      type: http
+      apiKey: abc123
+      connectTimeout: 10 seconds
+      socketTimeout: 10 seconds</pre>
 </div>
-</li>
-<li>
-<p><code>MBeansBuilder</code></p>
-<div class="ulist">
-<ul>
-<li>
-<p>Defines the interface between MBeansDiscovery and MetricsBuilder</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p><code>MetricsBuilder</code> derived from <code>MBeansBuilder</code></p>
-<div class="ulist">
-<ul>
-<li>
-<p>Listens to MBeans via MBeansBuilder interface</p>
-</li>
-<li>
-<p>Creates a context for each MBean</p>
-<div class="ulist">
-<ul>
-<li>
-<p><code>MetricsContext</code> defines an interface</p>
-</li>
-<li>
-<p><code>BasicMetricsContext</code></p>
-<div class="ulist">
-<ul>
-<li>
-<p>implements <code>MetricsContext</code> interface</p>
-</li>
-<li>
-<p>converts each MBean attribute with long/double/float type to a unique com.codehale.metric.Gauge.</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>future: <code>MeterMetricsContext</code> converts MBean to <code>com.codehale.metric.Meter</code></p>
-</li>
-<li>
-<p>future: <code>HistogramMetricsContext</code> converts MBean to <code>com.codehale.metric.Histogram</code></p>
-</li>
-</ul>
-</div>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p><code>ReporterBuilder</code></p>
-<div class="ulist">
-<ul>
-<li>
-<p>Creates the configured reporter factory and builds the configured reporter. The reporter will
-use the metric registry to process the discovered metrics and forwards them to the reporter.</p>
-</li>
-<li>
-<p>Each type of reporter factory is derived from the dropwizard metrics BaseReporterFactory class.
-The "type" parameter of the reporter configuration will be used to create the reporter factory
-for a given reporter type.</p>
-</li>
-<li>
-<p>If new reporter type is needed, then a new factory should be created with
-appropriate parameters to build the new reporter.</p>
-</li>
-<li>
-<p>Once the reporter factory is created, a given reporter is build using the parameters in the configuration</p>
-<div class="ulist">
-<ul>
-<li>
-<p><code>ReporterFactory</code> - Top level model class that contains the configured reporter factory</p>
-</li>
-<li>
-<p><code>ConsoleReporterFactory</code> - Contains the console reporter specific configuration. Builds the
-reporter based of type console. For more information, follow this <a href="https://dropwizard.github.io/metrics/3.1.0/manual/core/#console">check this</a></p>
-</li>
-<li>
-<p><code>DatadogReporterFactory</code> - Contains the datadog reporter specific configuration. Builds the
-reporter based of type datadog. It will use either udp or http transport.
-For more information on DatadogReporter, follow this <a href="https://github.com/coursera/metrics-datadog">check this</a></p>
-</li>
-</ul>
-</div>
-</li>
-</ul>
-</div>
-</li>
-</ul>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-05-20 11:07:36 EDT
+Last updated 2015-05-20 10:48:59 EDT
 </div>
 </div>
 </body>

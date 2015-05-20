@@ -2,7 +2,10 @@
 
 == Configuration Details:
 . This configuration contains metrics discovery poll interval and reporter specific configuration
-.. The examples configuration below
+... MBeans-discovery-poll-interval: Poll time to discover and update the mbeans
+... reporter: The type of reporter to push the metrics and the reporter specific configuration
+
+== The example configuration
 
 [source,yaml]
 .metrics-wizard.yml for console reporter

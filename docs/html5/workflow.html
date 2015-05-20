@@ -539,13 +539,13 @@ table.CodeRay td.code>pre{padding:0}
 <p>Read Metrics-wizard configuration. Filename is passed as an argument to <code>premain</code> function.</p>
 </li>
 <li>
-<p>Using configuration parameters, create <code>WizardReporter</code> (TBD)</p>
-</li>
-<li>
 <p>Create <code>MetricsBuilder</code>, derived from <code>MBeansBuilder</code>.</p>
 </li>
 <li>
 <p>Create and Start <code>MBeansDiscovery</code>.</p>
+</li>
+<li>
+<p>Create <code>ReporterBuilder</code> and using configuration parameters, build the reporter</p>
 </li>
 </ol>
 </div>
@@ -729,6 +729,10 @@ com.codehale.metric.Gauge.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
+<p>As indicated above in the premain section, Once the metrics registry the created, the configured
+reporter is built in the reporter builder</p>
+</li>
+<li>
 <p>Creates the configured reporter factory.</p>
 </li>
 <li>
@@ -744,7 +748,7 @@ com.codehale.metric.Gauge.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-05-19 15:11:58 EDT
+Last updated 2015-05-20 11:12:20 EDT
 </div>
 </div>
 </body>

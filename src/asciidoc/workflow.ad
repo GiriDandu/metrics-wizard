@@ -3,9 +3,9 @@
 == Premain:
 . Create `WizardAgent` object (contains: `MetricsBuilder`, `MBeansDiscovery` and `WizardReporter`)
 . Read Metrics-wizard configuration. Filename is passed as an argument to `premain` function.
-. Using configuration parameters, create `WizardReporter` (TBD)
 . Create `MetricsBuilder`, derived from `MBeansBuilder`.
 . Create and Start `MBeansDiscovery`.
+. Create `ReporterBuilder` and using configuration parameters, build the reporter
 
 == MBeansDiscovery
 . Contains: MBeanTimer, MBeanContextRegistry
@@ -57,6 +57,8 @@
 . Delete BasicMetricsContext
 
 == ReporterBuilder
+. As indicated above in the premain section, Once the metrics registry the created, the configured
+reporter is built in the reporter builder
 . Creates the configured reporter factory.
 . Factory builds the reporter using metrics registry.
 . Created reporter runs in its own thread and periodically polls the metrics in the metrics registry

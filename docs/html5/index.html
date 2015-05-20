@@ -513,14 +513,15 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#_design_thoughts">Design Thoughts</a>
 <ul class="sectlevel2">
 <li><a href="#_quick_primer">Quick Primer</a></li>
-<li><a href="#_configuration">Configuration</a></li>
-<li><a href="#_metrics_wizard_the_agent">Metrics-wizard, the agent</a></li>
+<li><a href="#_mbeansdiscovery">MBeansDiscovery</a></li>
+<li><a href="#_metricsbuilder">MetricsBuilder</a></li>
 <li><a href="#_reporting">Reporting</a></li>
-<li><a href="#_transformation_tbd">Transformation - TBD</a></li>
+<li><a href="#_error_handling">Error Handling</a></li>
+<li><a href="#_open_questions">Open questions</a></li>
+<li><a href="#_future">Future</a></li>
 </ul>
 </li>
-<li><a href="#_open_questions">Open questions</a></li>
-<li><a href="#_an_awful_diagram">An awful diagram</a></li>
+<li><a href="#_an_awful_block_diagram">An awful block diagram</a></li>
 <li><a href="#_an_awful_internal_diagram">An awful internal diagram</a></li>
 </ul>
 </div>
@@ -579,23 +580,23 @@ table.CodeRay td.code>pre{padding:0}
 <h2 id="_the_problem"><a class="anchor" href="#_the_problem"></a>The Problem</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Most of the applications expose their metrics via JMX. Usually an external agent connects to the
-JMX port and gathers all the information.</p>
+<p>Applications expose their metrics via JMX interface.</p>
 </div>
 <div class="paragraph">
-<p>As discussed in this <a href="http://hackers.lookout.com/2015/01/cassandra-monitoring/">article</a>
-there are issues with using an external JMX gathering tool:</p>
+<p>Usually a remote client connects to the JMX port and gathers all the metrics. However, as
+discussed in this <a href="http://hackers.lookout.com/2015/01/cassandra-monitoring/">article</a>
+there are issues with this approach:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>it has to poll the application&#8217;s JMX agent</p>
+<p>the remote client has to poll the application&#8217;s JMX interface</p>
 </li>
 <li>
-<p>authenticate to avoid exposing vulnerabilities</p>
+<p>application may require authentication to avoid exposing vulnerabilities</p>
 </li>
 <li>
-<p>redundancy issues if reporting tool dies</p>
+<p>redundancy issues if remote client dies</p>
 </li>
 </ul>
 </div>
@@ -610,13 +611,37 @@ there are issues with using an external JMX gathering tool:</p>
 <p>Metrics Wizard is a Java agent for aggregating and reporting metrics from any JVM process.</p>
 </li>
 <li>
-<p>It detects the metrics of type Long, Integer, Double, or Float and periodically reports it
-to the server via UDP or HTTP transport. Such an approach means no changes required to the
-existing application code.</p>
+<p>It runs along side the application on same JVM and discovers MBeanServer(s) and MBean(s)
+as they become available on the JMX interface.</p>
 </li>
 <li>
-<p>The Metrics-Wizard will use configured reporter for reporting these published
-metrics to server.</p>
+<p>It transforms these MBeans and/or attributes into dropwizard metrics.</p>
+</li>
+<li>
+<p>The reporter publishes metrics to the upstream server. The metrics-wizard allows user to
+configure the reporter, underlying transport, attributes to be published, etc.</p>
+</li>
+<li>
+<p>The agent consists of MBeansDiscovery, MetricsBuilder and Reporter</p>
+<div class="literalblock">
+<div class="content">
+<pre>SNMPReporter   &lt;-.
+                  \
+DatadogReporter &lt;-- Reporter
+                  /    ^
+StatsdReporter &lt;-`     |
+                       |
+                [MetricRegistry]
+                       ^
+                       |
+                       |
+                   /Transform/
+                       ^
+                       |
+                       |
+                MetricsBuilder &lt;--/MBean found/--  MBeansDiscovery &lt;-- JMX</pre>
+</div>
+</div>
 </li>
 </ul>
 </div>
@@ -642,30 +667,24 @@ that consists of attributes (i.e. metrics), operations, notifications, etc.</p>
 </li>
 <li>
 <p>For each end-point (i.e. metric, statistic, gauge, meter, etc), application creates
-a MBean and registers it with JMX infrastructure (i.e. MBeanServer)</p>
+a MBean and registers it with JMX infrastructure (i.e. MBeanServer).</p>
+</li>
+<li>
+<p>A JVM can contain any number of MBeanServer(s); the application can create and release
+them using MBeanServerFactory.</p>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h3>
+<h3 id="_mbeansdiscovery"><a class="anchor" href="#_mbeansdiscovery"></a>MBeansDiscovery</h3>
 <div class="ulist">
 <ul>
 <li>
-<p>Define a threshold for a metric which would create a “monitor”</p>
+<p>Periodically scans MBeanServerFactory and discovers MBeanServer(s)</p>
 </li>
 <li>
-<p>Define and configure a reporter for the agent to use with a fully qualified class name</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_metrics_wizard_the_agent"><a class="anchor" href="#_metrics_wizard_the_agent"></a>Metrics-wizard, the agent</h3>
-<div class="ulist">
-<ul>
-<li>
-<p>In the premain routine, agent scans all the extant MBeans (metrics) from MBeanServer.</p>
+<p>Scans all the extant MBeans (metrics) from each MBeanServer.</p>
 </li>
 <li>
 <p>When an MBean is registered or unregistered in the MBeanServer, a MBeanServerNotification
@@ -673,17 +692,48 @@ Notification is emitted. The agent learns about these by registering a listener 
 "MBeanServerDelegate" MBean.</p>
 </li>
 <li>
-<p>If MBean generates notification (at run-time MBeanServer exposes this capability in MBean&#8217;s
-MBeanInfo object), then agent registers a NotificationListener to receive notifications from
-that MBean.</p>
+<p>If MBean generates an attribute change notification (at run-time MBeanServer exposes this
+capability in MBean&#8217;s MBeanInfo object), then agent registers a NotificationListener to
+receive notifications from that MBean.</p>
 </li>
 <li>
 <p>If MBean does no generate notifications, then agent polls the MBean periodically and
 detect attribute changes.</p>
 </li>
 <li>
-<p>Once metrics are detected, they are stored in
-<a href="https://dropwizard.github.io/metrics/3.1.0/getting-started/#the-registry">Dropwizard MetricRegistry</a>.</p>
+<p>The MBeansDiscovery emits following MBean notifications to MetricsBuilder:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>register - given MBean is registered on a MBeanServer</p>
+</li>
+<li>
+<p>update - for a given MBean, update attribute values in the local cache</p>
+</li>
+<li>
+<p>unregister - given MBean is unregistered from a MBeanServer</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_metricsbuilder"><a class="anchor" href="#_metricsbuilder"></a>MetricsBuilder</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>MetricsBuilder transforms the MBeans and its attributes into dropwizard metric(s)
+(e.g. Gauge, Counter, Metric, etc)</p>
+</li>
+<li>
+<p>In first phase, MetricsBuilder will create a Gauge for each MBean attribute with "Number" data type.</p>
+</li>
+<li>
+<p>Once metrics are detected, they are stored in the
+<a href="https://dropwizard.github.io/metrics/3.1.0/getting-started/#the-registry">Dropwizard MetricRegistry</a>.
+  The reporter feeds off of the MetricRegistry.</p>
 </li>
 </ul>
 </div>
@@ -710,31 +760,48 @@ the reporter is not in the scope of this library.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_transformation_tbd"><a class="anchor" href="#_transformation_tbd"></a>Transformation - TBD</h3>
+<h3 id="_error_handling"><a class="anchor" href="#_error_handling"></a>Error Handling</h3>
 <div class="ulist">
 <ul>
 <li>
-<p>Must be able to transform the value</p>
+<p>If agent fails to gather MBean and/or attribute from JMX interface, it will log an event and
+stops reporting the corresponding Metric(s) to the upstream Server, until the issue is resolved.</p>
 </li>
 <li>
-<p>Must be able to transform the name of the metric</p>
+<p>When MBean is unregistered from the MBeanServer, the agent stops monitoring and
+reporting the corresponding Metric(s) to the server.</p>
 </li>
 <li>
-<p>Must be configurable from the YAML configuration for a specific mbean name.
-E.g.
-<code>org.apache.ZookeeperService`ReplicatedServer_id1.QuorumSize=com.github.lookout.metricswizard.transforms..FancyIntTranform</code></p>
+<p>The agent maintains metric(s) that allows user to monitor and evaluate agent functionality.
+The agent report following set of statistics:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>NbrMBeanServers - number of MBeanServers monitored</p>
 </li>
 <li>
-<p>Should be configurable from the YAML configuration for a regular expression pattern</p>
+<p>NbrMBeansRegistered -  number of MBeans registered</p>
+</li>
+<li>
+<p>NbrMBeansUnregistered -  number of MBeans unregistered</p>
+</li>
+<li>
+<p>NbrMBeanOpsFailed - number of MBeans operations failed</p>
+</li>
+<li>
+<p>NbrReporterInvocations - number of time reported has been invoked</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Transport failures encountered by the reporter class are out of scope of the agent.</p>
 </li>
 </ul>
 </div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_open_questions"><a class="anchor" href="#_open_questions"></a>Open questions</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_open_questions"><a class="anchor" href="#_open_questions"></a>Open questions</h3>
 <div class="ulist">
 <ul>
 <li>
@@ -745,29 +812,62 @@ processes are using dropwizard-metrics 0.3?</p>
 <p>Are there special types of JMX MBeans that are exposed by off-the-shelf services
 like Cassandra or Kafka, which wouldn’t be normal Long/Double/Floats</p>
 </li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_future"><a class="anchor" href="#_future"></a>Future</h3>
+<div class="ulist">
+<ul>
 <li>
-<p>Can the agent get command line options? Property values?
-<a href="https://docs.oracle.com/javase/7/docs/api/java/lang/instrument/package-summary.html">YES</a></p>
+<p>Configuration</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Define a threshold for a metric</p>
+</li>
+</ul>
+</div>
 </li>
 <li>
-<p>a JMXMetric from dropwizard-metric should be processed like the metric of its type,
-i.e. if my service exposes a Gauge via the JMX reporter then the agent should
-ingest that as a Gauge in the agent</p>
+<p>Create Metric(s) for MBean attribute with complex data types (e.g. CompositeDataType)</p>
 </li>
 <li>
-<p>If multiple applications are running in the JVM, we should create different MetricsRegistry()s.
+<p>Create Metric(s) for MBean with known data types (e.g. com.codahale.metrics.Meter)</p>
+</li>
+<li>
+<p>Option to create MetricsRegistry(s) per MBeanServer
 <a href="https://dropwizard.github.io/metrics/3.1.0/manual/core/#metric-names">check this</a></p>
+</li>
+<li>
+<p>Transformation</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Transform the name or value of the metric</p>
+</li>
+<li>
+<p>Configurable from the YAML configuration for a specific mbean name.
+E.g.
+<code>org.apache.ZookeeperServiceReplicatedServer_id1.QuorumSize=com.github.lookout.metricswizard.FancyIntTranform</code></p>
+</li>
+<li>
+<p>Should be configurable from the YAML configuration for a regular expression pattern</p>
+</li>
+</ul>
+</div>
 </li>
 </ul>
 </div>
 </div>
 </div>
+</div>
 <div class="sect1">
-<h2 id="_an_awful_diagram"><a class="anchor" href="#_an_awful_diagram"></a>An awful diagram</h2>
+<h2 id="_an_awful_block_diagram"><a class="anchor" href="#_an_awful_block_diagram"></a>An awful block diagram</h2>
 <div class="sectionbody">
 <div class="literalblock">
 <div class="content">
-<pre>                                                   (Datagod, statsd, etc)
+<pre>                                                   (Datadogd, statsd, etc)
                                                       +---------+
                                                       | Server  |
                                                       +---^-----+
@@ -809,7 +909,7 @@ ingest that as a Gauge in the agent</p>
 |  |MBeansDiscovery  |           |M|  MetricsBuilder                            |  |
 |  |                 |           |B|                              +----------+  |  |
 |  |    +--+         |register   |e|  +--------------------+      |Metric    |  |  |
-|  |    |L |-+       +----------&gt;+a|  |BasicMetricsContext |-+    |REgistry  |  |  |
+|  |    |L |-+       +----------&gt;+a|  |BasicMetricsContext |-+    |Registry  |  |  |
 |  |    +--+ |       |           |n|  |                    | |    |          |  |  |
 |  |     +---+       |           |s|  |           +-----+ ----------&gt;+-----+ |Reporter
 |  | Listening       |update     |B|  |           |-----|  | |    |  |-----| |--------\+--------+
@@ -831,7 +931,7 @@ ingest that as a Gauge in the agent</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-05-19 15:28:11 EDT
+Last updated 2015-05-19 16:12:59 EDT
 </div>
 </div>
 </body>

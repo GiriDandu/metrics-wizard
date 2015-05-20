@@ -58,8 +58,15 @@ The metric-wizard source code can be found in a few different directories:
 * `ReporterBuilder`
 ** Creates the configured reporter factory and builds the configured reporter. The reporter will
 use the metric registry to process the discovered metrics and forwards them to the reporter.
-*** `ReporterFactoryContainer` - Top level model class that contains the configured reporter factory
+** Each type of reporter factory is derived from the dropwizard metrics BaseReporterFactory class.
+The "type" parameter of the reporter configuration will be used to create the reporter factory
+of a given reporter type.
+** If a new reporter type is needed, then a new factory should be created with appropriate
+parameters to build the new reporter.
+** Once the reporter factory is created, a given reporter is built using the parameters in the configuration
+*** `ReporterFactory` - Top level model class that contains the configured reporter factory
 *** `ConsoleReporterFactory` - Contains the console reporter specific configuration. Builds the
-reporter based of type console
+reporter based of type console. For more information, follow this link:https://dropwizard.github.io/metrics/3.1.0/manual/core/#console[check this]
 *** `DatadogReporterFactory` - Contains the datadog reporter specific configuration. Builds the
-reporter based of type datadog. It will use either udp or http transport
+reporter based of type datadog. It will use either udp or http transport.
+For more information on DatadogReporter, follow this link:https://github.com/coursera/metrics-datadog[check this]
